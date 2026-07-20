@@ -22,7 +22,55 @@ def train_model(
     **kwargs,
 ):
     # Reuse much of the SFT code here
-    raise NotImplementedError()
+    from peft import LoraConfig, get_peft_model
+    from transformers import Trainer, TrainingArguments
+    from torch.utils.data import Dataset as TorchDataset
+
+    with open(data_path) as f:
+        data = json.load(f)
+
+    llm = BaseLLM()
+
+    class _Dataset(TorchDataset):
+        def __len__(self): return len(data)
+        def __getitem__(self, idx):
+            question, _, completion = data[idx]
+            return tokenize(llm.tokenizer, question=question, answer=completion.strip())
+
+    lora_config = LoraConfig(
+        r=32,
+        lora_alpha=128,
+        target_modules="all-linear",
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+
+    llm.model = get_peft_model(llm.model, lora_config)
+    llm.model.enable_input_require_grads()
+
+    trainer = Trainer(
+        model=llm.model,
+        args=TrainingArguments(
+            output_dir=output_dir,
+            logging_dir=output_dir,
+            report_to="tensorboard",
+            num_train_epochs=5,
+            per_device_train_batch_size=32,
+            learning_rate=2e-4,
+            gradient_checkpointing=True,
+            warmup_ratio=0.1,
+            lr_scheduler_type="cosine",
+            logging_steps=50,
+        ),
+        train_dataset=_Dataset(),
+    )
+
+    trainer.train()
+
+    final_path = Path(__file__).parent / "rft_model"
+    llm.model.save_pretrained(final_path)
+    print(f"Saved to {final_path}")
+    test_model(str(final_path))
 
 
 if __name__ == "__main__":

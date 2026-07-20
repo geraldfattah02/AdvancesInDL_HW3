@@ -105,7 +105,43 @@ class BaseLLM:
                 for r in self.batched_generate(prompts[idx : idx + micro_batch_size], num_return_sequences, temperature)
             ]
 
-        raise NotImplementedError()
+        # Left-pad so all sequences align on the right (where generation begins)
+        self.tokenizer.padding_side = "left"
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        inputs = self.tokenizer(prompts, return_tensors="pt", padding=True).to(self.device)
+
+        generate_kwargs = dict(
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=50,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+
+        if temperature > 0:
+            generate_kwargs["do_sample"] = True
+            generate_kwargs["temperature"] = temperature
+        else:
+            generate_kwargs["do_sample"] = False
+
+        n = num_return_sequences if num_return_sequences is not None else 1
+        generate_kwargs["num_return_sequences"] = n
+
+        outputs = self.model.generate(**generate_kwargs)
+
+        # Strip the input tokens — only decode what was newly generated
+        input_len = inputs["input_ids"].shape[1]
+        new_tokens = outputs[:, input_len:]
+
+        decoded = self.tokenizer.batch_decode(new_tokens, skip_special_tokens=True)
+        # decoded is a flat list of len(prompts) * n strings
+
+        if num_return_sequences is None:
+            return decoded  # one string per prompt
+        else:
+            # Reshape into list[list[str]]: one inner list per prompt
+            return [decoded[i * n : (i + 1) * n] for i in range(len(prompts))]
 
     def answer(self, *questions) -> list[float]:
         """
