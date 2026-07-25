@@ -82,7 +82,7 @@ class TokenizedDataset:
 
 
 def train_model(
-    output_dir: str,
+    output_dir: str = "homework/sft_model",
     **kwargs,
 ):
     from pathlib import Path
