@@ -18,7 +18,8 @@ def load() -> BaseLLM:
 
 
 def train_model(
-    output_dir: str,
+    output_dir: str = "homework/rft_model",
+    data_path: str = "data/rft.json",
     **kwargs,
 ):
     # Reuse much of the SFT code here
