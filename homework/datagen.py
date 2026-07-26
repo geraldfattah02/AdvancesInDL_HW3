@@ -12,7 +12,7 @@ def generate_dataset(output_json: str = "data/rft.json", oversample: int = 3, te
     model._micro_batch_size = 8
 
     dataset = Dataset("train")
-    questions = [dataset[i] for i in range(len(100))]
+    questions = [dataset[i] for i in range(100)]
     prompts = [model.format_prompt(q) for q, _ in questions]
 
     print(f"Generating {oversample} completions for {len(prompts)} questions...")
