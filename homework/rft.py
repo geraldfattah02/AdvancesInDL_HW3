@@ -41,8 +41,8 @@ def train_model(
             return tokenize(llm.tokenizer, question=question, answer=completion.strip())
 
     lora_config = LoraConfig(
-        r=32,
-        lora_alpha=128,
+        r=8,
+        lora_alpha=32,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         bias="none",
         task_type="CAUSAL_LM",

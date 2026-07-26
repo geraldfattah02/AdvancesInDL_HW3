@@ -93,8 +93,8 @@ def train_model(
 
     # LoRA config -> r=16 keeps adapter well under 20MB for a 360M model
     lora_config = LoraConfig(
-        r=16,
-        lora_alpha=64,
+        r=4,
+        lora_alpha=16,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         bias="none",
         task_type="CAUSAL_LM",
