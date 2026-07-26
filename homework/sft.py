@@ -110,8 +110,8 @@ def train_model(
         output_dir=output_dir,
         logging_dir=output_dir,
         report_to="tensorboard",
-        max_steps=200,  # replaces num_train_epochs
-        per_device_train_batch_size=32,
+        max_steps=100,  # replaces num_train_epochs
+        per_device_train_batch_size=16,
         learning_rate=2e-4,
         gradient_checkpointing=True,
         warmup_steps=20,
